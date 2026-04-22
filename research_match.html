@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ResearchMatch — 研究者マッチングマップ</title>
+<style>
+/* ===== RESET & VARIABLES ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --surface3: #1f2d47;
+  --border: #2a3a55;
+  --text: #e8edf5;
+  --text-muted: #8899bb;
+  --text-dim: #4a5a7a;
+  --accent: #3b82f6;
+  --accent2: #6366f1;
+  --sync: #3b82f6;
+  --cross: #10b981;
+  --seren: #8b5cf6;
+  --hobby: #f59e0b;
+  --sync-bg: rgba(59,130,246,0.13);
+  --cross-bg: rgba(16,185,129,0.13);
+  --seren-bg: rgba(139,92,246,0.13);
+  --hobby-bg: rgba(245,158,11,0.13);
+  --danger: #ef4444;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.45);
+  --shadow-lg: 0 8px 48px rgba(0,0,0,0.65);
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Segoe UI','Hiragino Sans','Yu Gothic UI',sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; font-size: 14px; line-height: 1.6;
+  overflow: hidden;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ===== HEADER ===== */
+.header {
+  height: 56px; background: linear-gradient(135deg,#0d1b36,#0a0e1a);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+}
+.logo {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 17px; font-weight: 800; letter-spacing: -0.5px;
+  background: linear-gradient(135deg,var(--accent),var(--seren));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.logo-icon { font-size: 21px; }
+.header-right { display: flex; gap: 8px; align-items: center; }
+.privacy-badge {
+  font-size: 11px; color: var(--cross); background: rgba(16,185,129,0.12);
+  border: 1px solid rgba(16,185,129,0.3); border-radius: 20px;
+  padding: 3px 10px; display: flex; align-items: center; gap: 5px;
+}
+.btn {
+  padding: 6px 14px; border-radius: var(--radius-sm); border: none;
+  cursor: pointer; font-size: 12px; font-weight: 600;
+  transition: all 0.2s; display: flex; align-items: center; gap: 5px;
+}
+.btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+.btn-danger { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+
+/* ===== APP SHELL ===== */
+.app-shell {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  grid-template-rows: calc(100vh - 56px);
+  margin-top: 56px;
+}
+
+/* ===== LEFT PANEL (INPUT) ===== */
+.left-panel {
+  background: var(--surface); border-right: 1px solid var(--border);
+  overflow-y: auto; display: flex; flex-direction: column; gap: 0;
+}
+.left-inner { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--text-dim);
+  display: flex; align-items: center; gap: 6px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+/* Drop Zone */
+.drop-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 16px 12px; text-align: center; cursor: pointer;
+  transition: all 0.25s; position: relative;
+  background: linear-gradient(135deg,rgba(59,130,246,0.03),rgba(99,102,241,0.03));
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--accent); background: rgba(59,130,246,0.08);
+}
+.drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.drop-icon { font-size: 24px; margin-bottom: 5px; }
+.drop-title { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+.drop-sub { font-size: 10px; color: var(--text-muted); }
+.format-badges { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-top: 7px; }
+.fbadge { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: var(--surface3); color: var(--text-muted); font-weight: 600; }
+
+/* Form */
+.form-group { display: flex; flex-direction: column; gap: 3px; }
+.form-label {
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  display: flex; align-items: center; gap: 4px;
+}
+.req { color: var(--danger); }
+.form-input, .form-textarea {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  padding: 7px 9px; font-size: 12px; font-family: inherit;
+  transition: border-color 0.2s;
+}
+.form-input:focus, .form-textarea:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+.form-input::placeholder, .form-textarea::placeholder { color: var(--text-dim); font-size: 11px; }
+.form-textarea { resize: vertical; min-height: 52px; }
+.kw-hint { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+
+/* Synonym Tags */
+.synonym-row { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.syn-tag {
+  font-size: 10px; padding: 1px 7px; border-radius: 10px;
+  background: var(--surface3); color: var(--text-muted);
+  border: 1px solid var(--border); cursor: pointer; transition: all 0.15s;
+}
+.syn-tag:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Slider */
+.slider-section { background: var(--surface2); border-radius: var(--radius-sm); padding: 10px 12px; }
+.slider-title { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+.slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.slider-label { font-size: 10px; width: 72px; flex-shrink: 0; }
+.slider-label span { font-size: 10px; }
+.range-input {
+  flex: 1; -webkit-appearance: none; height: 4px;
+  border-radius: 2px; outline: none; cursor: pointer;
+}
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 13px; height: 13px;
+  border-radius: 50%; cursor: pointer; border: 2px solid #fff;
+}
+.slider-val { font-size: 10px; font-weight: 700; width: 28px; text-align: right; }
+
+/* Match Button */
+.match-btn {
+  width: 100%; padding: 11px; border-radius: var(--radius);
+  background: linear-gradient(135deg,var(--accent),var(--accent2));
+  color: #fff; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.3px;
+  transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.match-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(59,130,246,0.4); }
+
+/* Data note */
+.data-note {
+  font-size: 10px; color: var(--text-dim); text-align: center;
+  padding: 6px 8px; background: var(--surface2);
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+/* ===== RIGHT PANEL ===== */
+.right-panel {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  overflow: hidden;
+}
+
+/* ===== MAP PANE ===== */
+.map-pane {
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+.map-toolbar {
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--surface);
+}
+.map-view-btns { display: flex; gap: 3px; }
+.mvbtn {
+  padding: 4px 10px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); cursor: pointer;
+  font-size: 11px; background: transparent; color: var(--text-muted);
+  transition: all 0.15s;
+}
+.mvbtn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.filter-checks { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.fcheck { display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer; user-select: none; }
+.fcheck input { display: none; }
+.fcheck-dot {
+  width: 12px; height: 12px; border-radius: 50%; border: 2px solid;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.fcheck input:checked + .fcheck-dot { opacity: 1; }
+.fcheck input:not(:checked) + .fcheck-dot { opacity: 0.3; }
+.map-canvas-wrap { flex: 1; position: relative; overflow: hidden; }
+#mainCanvas { display: block; width: 100%; height: 100%; }
+.canvas-tooltip {
+  position: absolute; background: var(--surface3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 11px;
+  font-size: 11px; pointer-events: none; z-index: 50;
+  box-shadow: var(--shadow); min-width: 150px; display: none;
+}
+.tt-name { font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.tt-inst { color: var(--text-muted); font-size: 10px; margin-bottom: 5px; }
+.tt-scores { display: flex; flex-direction: column; gap: 3px; }
+.tt-row { display: flex; align-items: center; gap: 5px; font-size: 10px; }
+.tt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.map-axis-x {
+  display: flex; justify-content: space-between;
+  padding: 4px 16px; font-size: 10px; color: var(--text-dim);
+  border-top: 1px solid var(--border); background: var(--surface);
+}
+
+/* ===== DETAIL PANE ===== */
+.detail-pane {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface);
+}
+.detail-toolbar {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px;
+}
+.tab-group { display: flex; gap: 3px; background: var(--surface2); border-radius: var(--radius-sm); padding: 3px; flex: 1; }
+.dtab {
+  flex: 1; padding: 5px 4px; border-radius: 5px;
+  border: none; cursor: pointer; font-size: 10px; font-weight: 600;
+  background: transparent; color: var(--text-muted); transition: all 0.15s;
+  white-space: nowrap; text-align: center;
+}
+.dtab:hover { color: var(--text); }
+.dtab.active[data-mode="sync"] { background: var(--sync-bg); color: var(--sync); }
+.dtab.active[data-mode="cross"] { background: var(--cross-bg); color: var(--cross); }
+.dtab.active[data-mode="seren"] { background: var(--seren-bg); color: var(--seren); }
+.dtab.active[data-mode="hobby"] { background: var(--hobby-bg); color: var(--hobby); }
+.tab-cnt {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface3); border-radius: 8px;
+  padding: 0 5px; font-size: 9px; min-width: 16px; height: 16px; margin-left: 2px;
+}
+.sort-sel {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-muted); border-radius: var(--radius-sm); padding: 4px 7px; font-size: 10px;
+}
+
+/* Mode description banner */
+.mode-desc {
+  padding: 8px 14px; font-size: 11px; color: var(--text-muted);
+  border-bottom: 1px solid var(--border); line-height: 1.5;
+  display: flex; align-items: flex-start; gap: 6px;
+}
+.mode-desc-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+/* Card list */
+.card-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+
+/* Researcher Card */
+.rcard {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px;
+  cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.rcard::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px;
+}
+.rcard[data-mode="sync"]::before { background: var(--sync); }
+.rcard[data-mode="cross"]::before { background: var(--cross); }
+.rcard[data-mode="seren"]::before { background: var(--seren); }
+.rcard[data-mode="hobby"]::before { background: var(--hobby); }
+.rcard:hover, .rcard.selected {
+  border-color: var(--accent); background: var(--surface3);
+  transform: translateX(2px);
+}
+.rcard.selected { box-shadow: 0 0 0 2px rgba(59,130,246,0.3); }
+.rc-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+.rc-avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+}
+.rc-info { flex: 1; min-width: 0; }
+.rc-name { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-inst { font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-rank-txt { font-size: 10px; color: var(--text-dim); }
+.rc-actions { display: flex; gap: 4px; align-items: flex-start; }
+.like-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+  border-radius: var(--radius-sm); padding: 3px 7px; cursor: pointer; font-size: 11px; transition: all 0.15s;
+}
+.like-btn.liked { background: rgba(239,68,68,0.15); border-color: var(--danger); color: var(--danger); }
+.star-btn {
+  background: transparent; border: none; cursor: pointer; font-size: 11px; padding: 3px 2px;
+  color: var(--text-dim); transition: color 0.15s;
+}
+.star-btn.s1 { color: #f59e0b; }
+.star-btn.s2 { color: #f59e0b; }
+.star-btn.s3 { color: #f59e0b; }
+.rc-score { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
+.score-pct {
+  font-size: 15px; font-weight: 800; min-width: 38px;
+}
+.score-mini-bars { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.smb-row { display: flex; align-items: center; gap: 5px; }
+.smb-label { font-size: 9px; color: var(--text-dim); width: 56px; flex-shrink: 0; }
+.smb-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.smb-fill { height: 100%; border-radius: 2px; }
+.smb-val { font-size: 9px; font-weight: 700; width: 24px; text-align: right; }
+.rc-kws { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
+.kwtag {
+  font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 500;
+}
+.kwtag.match { border: 1px solid currentColor; font-weight: 700; }
+.kwtag.match::before { content: '★ '; font-size: 8px; }
+.rc-reason {
+  font-size: 10px; color: var(--text-muted); line-height: 1.5;
+  padding: 5px 7px; background: var(--surface); border-radius: 5px;
+  border-left: 2px solid var(--border);
+}
+.rank-num {
+  font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 8px;
+}
+
+/* ===== AI DETAIL PANEL (slides in) ===== */
+.ai-panel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 380px;
+  background: var(--surface); border-left: 1px solid var(--border);
+  transform: translateX(100%); transition: transform 0.3s ease;
+  z-index: 10; display: flex; flex-direction: column; overflow: hidden;
+}
+.ai-panel.open { transform: translateX(0); }
+.ai-panel-header {
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between;
+  background: var(--surface);
+}
+.ai-panel-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.ai-panel-sub { font-size: 11px; color: var(--text-muted); }
+.ai-close {
+  background: none; border: none; cursor: pointer; color: var(--text-muted);
+  font-size: 18px; padding: 2px 6px; border-radius: 5px; transition: all 0.15s;
+}
+.ai-close:hover { background: var(--surface2); color: var(--text); }
+.ai-body { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+.ai-sec-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--text-dim); margin-bottom: 7px;
+  display: flex; align-items: center; gap: 6px;
+}
+.ai-sec-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.ai-text { font-size: 12px; color: var(--text); line-height: 1.7; background: var(--surface2); border-radius: var(--radius-sm); padding: 10px 12px; }
+.q-list { display: flex; flex-direction: column; gap: 5px; }
+.q-item { display: flex; gap: 7px; font-size: 11px; align-items: flex-start; background: var(--surface2); border-radius: var(--radius-sm); padding: 8px 10px; }
+.q-num { font-size: 9px; font-weight: 700; background: var(--accent); color: #fff; width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.collab-list { display: flex; flex-direction: column; gap: 5px; }
+.collab-item { font-size: 11px; background: var(--surface2); border-radius: var(--radius-sm); padding: 7px 10px; display: flex; align-items: flex-start; gap: 7px; }
+.risk-box { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: var(--radius-sm); padding: 9px 11px; font-size: 11px; color: #fca5a5; display: flex; gap: 7px; }
+.ai-footer { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; gap: 7px; }
+
+/* Profile modal */
+.profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pitem { background: var(--surface2); border-radius: var(--radius-sm); padding: 8px 10px; }
+.pitem-label { font-size: 9px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.pitem-val { font-size: 11px; color: var(--text); line-height: 1.5; }
+
+/* Liked bar */
+.liked-bar {
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  background: var(--surface3); border: 1px solid var(--border);
+  border-radius: 24px; padding: 8px 16px;
+  display: none; align-items: center; gap: 10px;
+  box-shadow: var(--shadow-lg); z-index: 300; white-space: nowrap;
+}
+.liked-bar.visible { display: flex; }
+
+/* Empty / Welcome */
+.welcome-state {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px; color: var(--text-muted);
+  pointer-events: none;
+}
+.welcome-icon { font-size: 52px; opacity: 0.3; }
+.welcome-title { font-size: 15px; font-weight: 600; color: var(--text); opacity: 0.5; }
+.welcome-sub { font-size: 12px; opacity: 0.4; text-align: center; max-width: 260px; line-height: 1.6; }
+
+/* Loading */
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(10,14,26,0.88);
+  backdrop-filter: blur(4px); z-index: 400;
+  display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+}
+.loading-overlay.active { display: flex; }
+.spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--border); border-top-color: var(--accent); animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-steps { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+.loading-step { font-size: 12px; color: var(--text-dim); transition: color 0.3s; }
+.loading-step.active { color: var(--text); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1100px) {
+  .app-shell { grid-template-columns: 260px 1fr; }
+  .right-panel { grid-template-columns: 1fr 320px; }
+  .ai-panel { width: 320px; }
+}
+@media (max-width: 780px) {
+  .app-shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .right-panel { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo"><span class="logo-icon">🔬</span>ResearchMatch</div>
+  <div class="header-right">
+    <div class="privacy-badge">🔒 データはサーバーに送信されません</div>
+    <button class="btn btn-ghost" style="font-size:11px;" onclick="showLikedList()">❤️ いいね (<span id="likedCount">0</span>)</button>
+    <button class="btn btn-ghost" style="font-size:11px;" onclick="downloadAllLiked()">⬇ ブリーフ出力</button>
+  </div>
+</header>
+
+<div class="app-shell">
+
+  <!-- ===== LEFT PANEL ===== -->
+  <aside class="left-panel">
+    <div class="left-inner">
+
+      <!-- Data Note -->
+      <div class="data-note">
+        🔒 入力データはブラウザ内のみで処理され、<br>サーバーには一切送信されません。<br>ページを閉じるとデータは消去されます。
+      </div>
+
+      <!-- Drop Zone -->
+      <div>
+        <div class="section-label">📤 プロファイルアップロード</div>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" accept=".txt,.csv" id="fileInput" onchange="handleFile(event)">
+          <div class="drop-icon">📂</div>
+          <div class="drop-title">ファイルをドロップ or クリック</div>
+          <div class="drop-sub">TXT・CSV対応（UTF-8）</div>
+          <div class="format-badges">
+            <span class="fbadge">TXT</span><span class="fbadge">CSV</span>
+            <span class="fbadge">PDF*</span><span class="fbadge">DOCX*</span>
+            <span class="fbadge">URL*</span>
+          </div>
+          <div class="drop-sub" style="margin-top:4px;font-size:9px;">*は手動入力推奨</div>
+        </div>
+      </div>
+
+      <!-- Basic Info -->
+      <div>
+        <div class="section-label">👤 基本情報</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="form-group">
+            <label class="form-label">名前 <span class="req">*</span></label>
+            <input class="form-input" id="myName" placeholder="例：山田 太郎" value="山田 太郎">
+          </div>
+          <div class="form-group">
+            <label class="form-label">所属機関</label>
+            <input class="form-input" id="myInst" placeholder="例：東京大学 情報理工学系研究科" value="東京大学 情報理工学系研究科">
+          </div>
+          <div class="form-group">
+            <label class="form-label">職位</label>
+            <input class="form-input" id="myRank" placeholder="例：准教授" value="准教授">
+          </div>
+        </div>
+      </div>
+
+      <!-- Research Keywords (split) -->
+      <div>
+        <div class="section-label">🔬 研究キーワード</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="form-group">
+            <label class="form-label">研究手法キーワード <span class="req">*</span></label>
+            <textarea class="form-textarea" id="myMethodKw" placeholder="例：機械学習, 深層学習, センシング, 統計モデリング">機械学習, 深層学習, 自然言語処理, センシング</textarea>
+            <div class="kw-hint">💡 AI・手法・アルゴリズム・技術など（カンマ区切り）</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">応用領域キーワード <span class="req">*</span></label>
+            <textarea class="form-textarea" id="myDomainKw" placeholder="例：医療画像, 診断支援, 農業IoT">画像認識, 異常検知, 医療診断</textarea>
+            <div class="kw-hint">💡 医療・農業・材料・教育など対象領域（カンマ区切り）</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interest & Hobby -->
+      <div>
+        <div class="section-label">🌐 関心・趣味キーワード</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="form-group">
+            <label class="form-label">研究以外で関心のある研究キーワード</label>
+            <textarea class="form-textarea" id="myInterestKw" placeholder="例：脳科学, 社会シミュレーション, 量子コンピュータ">脳科学, 社会シミュレーション, 量子コンピュータ</textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">趣味・ライフスタイルキーワード</label>
+            <textarea class="form-textarea" id="myHobbyKw" placeholder="例：マラソン, コーヒー, 海外旅行, ジャズ">マラソン, コーヒー, 海外旅行, ジャズ, 読書</textarea>
+            <div class="kw-hint">💡 趣味・スポーツ・音楽・価値観など</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Synonym helper -->
+      <div>
+        <div class="section-label">🔤 表記揺れ候補（クリックで追加）</div>
+        <div class="kw-hint" style="margin-bottom:5px;">よく使われる類義語。クリックで手法欄に追加します。</div>
+        <div class="synonym-row" id="synonymRow">
+          <span class="syn-tag" onclick="addSynonym('人工知能')">人工知能</span>
+          <span class="syn-tag" onclick="addSynonym('AI')">AI</span>
+          <span class="syn-tag" onclick="addSynonym('強化学習')">強化学習</span>
+          <span class="syn-tag" onclick="addSynonym('コンピュータビジョン')">CV</span>
+          <span class="syn-tag" onclick="addSynonym('自然言語処理')">NLP</span>
+          <span class="syn-tag" onclick="addSynonym('IoT')">IoT</span>
+          <span class="syn-tag" onclick="addSynonym('バイオインフォマティクス')">バイオ情報</span>
+          <span class="syn-tag" onclick="addSynonym('シミュレーション')">シミュレーション</span>
+        </div>
+      </div>
+
+      <!-- Weight Sliders -->
+      <div>
+        <div class="section-label">⚖️ マッチング重み調整</div>
+        <div class="slider-section">
+          <div class="slider-title">🎛️ 各モードの重みを調整（合計が変わっても自動正規化）</div>
+          <div class="slider-row">
+            <label class="slider-label" style="color:var(--sync)"><span>🎯</span> シンクロ</label>
+            <input type="range" class="range-input" id="wSync" min="0" max="10" value="5" style="background:var(--sync)" oninput="updateSliderVal('wSync','vSync')">
+            <span class="slider-val" id="vSync" style="color:var(--sync)">5</span>
+          </div>
+          <div class="slider-row">
+            <label class="slider-label" style="color:var(--cross)"><span>🔄</span> クロスオーバー</label>
+            <input type="range" class="range-input" id="wCross" min="0" max="10" value="5" style="background:var(--cross)" oninput="updateSliderVal('wCross','vCross')">
+            <span class="slider-val" id="vCross" style="color:var(--cross)">5</span>
+          </div>
+          <div class="slider-row">
+            <label class="slider-label" style="color:var(--seren)"><span>✨</span> セレンディピティ</label>
+            <input type="range" class="range-input" id="wSeren" min="0" max="10" value="5" style="background:var(--seren)" oninput="updateSliderVal('wSeren','vSeren')">
+            <span class="slider-val" id="vSeren" style="color:var(--seren)">5</span>
+          </div>
+          <div class="slider-row">
+            <label class="slider-label" style="color:var(--hobby)"><span>☕</span> 趣味一致</label>
+            <input type="range" class="range-input" id="wHobby" min="0" max="10" value="5" style="background:var(--hobby)" oninput="updateSliderVal('wHobby','vHobby')">
+            <span class="slider-val" id="vHobby" style="color:var(--hobby)">5</span>
+          </div>
+          <div class="kw-hint" style="margin-top:4px;">💡「今日は遠い分野の人に会いたい」→ セレンディピティを上げる</div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div>
+        <div class="section-label">🔍 起点キーワード検索（任意）</div>
+        <input class="form-input" id="searchInput" placeholder="例：強化学習, 気候変動, ロボット, バイオ">
+        <div class="kw-hint" style="margin-top:3px;">入力すると該当キーワードを持つ研究者が優先表示されます</div>
+      </div>
+
+      <button class="match-btn" onclick="runMatching()">✨ マッチング開始</button>
+    </div>
+  </aside>
+
+  <!-- ===== RIGHT PANEL ===== -->
+  <div class="right-panel">
+
+    <!-- MAP PANE -->
+    <div class="map-pane">
+      <div class="map-toolbar">
+        <div class="map-view-btns">
+          <button class="mvbtn active" id="mvScatter" onclick="setMapView('scatter')">📊 散布図</button>
+          <button class="mvbtn" id="mvNetwork" onclick="setMapView('network')">🕸️ ネットワーク</button>
+          <button class="mvbtn" id="mvBubble" onclick="setMapView('bubble')">🫧 バブル</button>
+        </div>
+        <div class="filter-checks" id="filterChecks">
+          <label class="fcheck"><input type="checkbox" checked onchange="redrawMap()"><span class="fcheck-dot" style="background:var(--sync);border-color:var(--sync)"></span><span style="color:var(--sync);font-size:10px;">シンクロ</span></label>
+          <label class="fcheck"><input type="checkbox" checked onchange="redrawMap()"><span class="fcheck-dot" style="background:var(--cross);border-color:var(--cross)"></span><span style="color:var(--cross);font-size:10px;">クロスオーバー</span></label>
+          <label class="fcheck"><input type="checkbox" checked onchange="redrawMap()"><span class="fcheck-dot" style="background:var(--seren);border-color:var(--seren)"></span><span style="color:var(--seren);font-size:10px;">セレンディピティ</span></label>
+          <label class="fcheck"><input type="checkbox" checked onchange="redrawMap()"><span class="fcheck-dot" style="background:var(--hobby);border-color:var(--hobby)"></span><span style="color:var(--hobby);font-size:10px;">趣味一致</span></label>
+        </div>
+      </div>
+      <div class="map-canvas-wrap">
+        <canvas id="mainCanvas"></canvas>
+        <div class="canvas-tooltip" id="canvasTip"></div>
+        <!-- Welcome state -->
+        <div class="welcome-state" id="welcomeState">
+          <div class="welcome-icon">🗺️</div>
+          <div class="welcome-title">マッチングマップ</div>
+          <div class="welcome-sub">左パネルにプロファイルを入力し「マッチング開始」を押すと、研究者が地図上に表示されます</div>
+        </div>
+      </div>
+      <div class="map-axis-x">
+        <span>← 研究距離 近い（シンクロ寄り）</span>
+        <span style="color:var(--text-dim)">X軸：研究距離 ／ Y軸：実行可能性</span>
+        <span>研究距離 遠い（セレンディピティ寄り）→</span>
+      </div>
+    </div>
+
+    <!-- DETAIL PANE -->
+    <div class="detail-pane" style="position:relative;">
+
+      <!-- Tabs -->
+      <div class="detail-toolbar">
+        <div class="tab-group">
+          <button class="dtab active" data-mode="sync" onclick="switchTab('sync',this)">🎯 シンクロ<span class="tab-cnt" id="cnt-sync">0</span></button>
+          <button class="dtab" data-mode="cross" onclick="switchTab('cross',this)">🔄 クロス<span class="tab-cnt" id="cnt-cross">0</span></button>
+          <button class="dtab" data-mode="seren" onclick="switchTab('seren',this)">✨ セレン<span class="tab-cnt" id="cnt-seren">0</span></button>
+          <button class="dtab" data-mode="hobby" onclick="switchTab('hobby',this)">☕ 趣味<span class="tab-cnt" id="cnt-hobby">0</span></button>
+        </div>
+        <select class="sort-sel" id="sortSel" onchange="renderCards()">
+          <option value="score">スコア順</option>
+          <option value="name">名前順</option>
+        </select>
+      </div>
+
+      <!-- Mode description -->
+      <div class="mode-desc" id="modeDesc"></div>
+
+      <!-- Card list -->
+      <div class="card-list" id="cardList">
+        <div style="color:var(--text-dim);font-size:12px;text-align:center;padding:30px 0;">マッチング開始後に結果が表示されます</div>
+      </div>
+
+      <!-- AI Detail Panel (slides in from right) -->
+      <div class="ai-panel" id="aiPanel">
+        <div class="ai-panel-header">
+          <div>
+            <div class="ai-panel-name" id="apName">—</div>
+            <div class="ai-panel-sub" id="apSub">—</div>
+          </div>
+          <button class="ai-close" onclick="closeAIPanel()">✕</button>
+        </div>
+        <div class="ai-body" id="aiBody"></div>
+        <div class="ai-footer">
+          <button class="btn btn-ghost" style="flex:1;font-size:11px;" onclick="closeAIPanel()">← 一覧に戻る</button>
+          <button class="btn btn-primary" style="font-size:11px;" id="apLikeBtn" onclick="toggleLikeFromPanel()">❤️ いいね</button>
+          <button class="btn btn-ghost" style="font-size:11px;" onclick="printBriefCurrent()">🖨 印刷</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LIKED BAR -->
+<div class="liked-bar" id="likedBar">
+  <span>❤️</span>
+  <span style="font-size:12px;color:var(--text-muted)"><strong id="likedBarCnt" style="color:var(--text)">0</strong>名をいいね中</span>
+  <button class="btn btn-primary" style="font-size:11px;padding:5px 12px;" onclick="downloadAllLiked()">⬇ 一括出力</button>
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-steps">
+    <div class="loading-step" id="ls1">① プロファイルを解析中…</div>
+    <div class="loading-step" id="ls2">② キーワードの標準化・類義語処理…</div>
+    <div class="loading-step" id="ls3">③ 4モードのスコアリング計算中…</div>
+    <div class="loading-step" id="ls4">④ マップ座標の最適配置…</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SYNONYM DICTIONARY（表記揺れ吸収）
+// ============================================================
+const SYNONYMS = {
+  'ai': ['人工知能','ai','機械知能'],
+  '機械学習': ['機械学習','ml','machine learning','マシンラーニング'],
+  '深層学習': ['深層学習','ディープラーニング','dl','deep learning','dnn'],
+  '自然言語処理': ['自然言語処理','nlp','テキスト処理','言語処理'],
+  'コンピュータビジョン': ['コンピュータビジョン','cv','画像認識','画像処理','computer vision'],
+  '強化学習': ['強化学習','rl','reinforcement learning'],
+  'iot': ['iot','センシング','センサネットワーク','スマートセンサ'],
+  'バイオインフォマティクス': ['バイオインフォマティクス','生物情報学','生命情報','bioinformatics'],
+  '量子コンピュータ': ['量子コンピュータ','量子計算','量子情報','quantum computing'],
+  'ロボティクス': ['ロボティクス','ロボット工学','robotics','自律ロボット'],
+  'データサイエンス': ['データサイエンス','data science','データ分析','データ解析'],
+};
+
+function normalizeKw(kw) {
+  const lower = kw.toLowerCase().trim();
+  for (const [canonical, variants] of Object.entries(SYNONYMS)) {
+    if (variants.some(v => v.toLowerCase() === lower)) return canonical;
+  }
+  return kw.trim();
+}
+
+function parseKw(str) {
+  if (!str) return [];
+  return str.split(/[,、，\n]+/).map(s => normalizeKw(s)).filter(s => s.length > 0);
+}
+
+function addSynonym(kw) {
+  const el = document.getElementById('myMethodKw');
+  const cur = el.value.trim();
+  if (!cur) { el.value = kw; return; }
+  if (!cur.split(/[,、，]+/).map(s=>s.trim()).includes(kw)) {
+    el.value = cur + ', ' + kw;
+  }
+}
+
+// ============================================================
+// SAMPLE RESEARCHER DATABASE
+// ============================================================
+const RESEARCHERS = [
+  {
+    id:1, name:"鈴木 健一", inst:"京都大学 情報学研究科", rank:"教授",
+    methodKw:["機械学習","深層学習","統計モデリング","パターン認識"],
+    domainKw:["画像認識","ロボット制御","工場自動化"],
+    interestKw:["脳科学","認知科学","社会シミュレーション"],
+    hobbyKw:["マラソン","登山","コーヒー","写真"],
+    bio:"機械学習・深層学習の基礎理論から応用まで幅広く研究。特に少数サンプル学習と転移学習を専門とする。"
+  },
+  {
+    id:2, name:"田中 美咲", inst:"大阪大学 医学部", rank:"准教授",
+    methodKw:["医用画像処理","深層学習","統計解析"],
+    domainKw:["医療AI","診断支援","電子カルテ","臨床意思決定"],
+    interestKw:["機械学習","センシング","IoT"],
+    hobbyKw:["ヨガ","料理","旅行","読書"],
+    bio:"AIを活用した医療診断システムの研究。画像診断支援と電子カルテ解析を主要テーマとする。"
+  },
+  {
+    id:3, name:"佐藤 慎二", inst:"東北大学 理学部", rank:"助教",
+    methodKw:["量子コンピュータ","量子アルゴリズム","暗号理論"],
+    domainKw:["情報セキュリティ","量子通信","誤り訂正"],
+    interestKw:["機械学習","最適化","物理シミュレーション"],
+    hobbyKw:["チェス","将棋","クラシック音楽","読書"],
+    bio:"量子アルゴリズムと量子機械学習の接点を探る。古典コンピュータとの比較優位性を理論的に解析。"
+  },
+  {
+    id:4, name:"高橋 彩花", inst:"名古屋大学 農学部", rank:"講師",
+    methodKw:["IoT","センシング","データ駆動農業","リモートセンシング"],
+    domainKw:["精密農業","スマート農業","環境モニタリング","食料安全保障"],
+    interestKw:["機械学習","気候変動","生態系"],
+    hobbyKw:["ガーデニング","料理","ハイキング","写真"],
+    bio:"センサーネットワークとAIを組み合わせた次世代農業システムの開発。気候変動対応農業を研究。"
+  },
+  {
+    id:5, name:"伊藤 龍太郎", inst:"東京工業大学 理工学院", rank:"教授",
+    methodKw:["ロボティクス","強化学習","自律制御","センサフュージョン"],
+    domainKw:["マルチエージェント","工場自動化","災害対応ロボット"],
+    interestKw:["深層学習","ヒューマンロボットインタラクション","コンピュータビジョン"],
+    hobbyKw:["マラソン","サイクリング","料理","旅行"],
+    bio:"自律ロボットの知能化を研究。未知環境での適応制御と人間との協調動作を専門とする。"
+  },
+  {
+    id:6, name:"渡辺 千尋", inst:"慶應義塾大学 環境情報学部", rank:"准教授",
+    methodKw:["エージェントベースモデリング","複雑系","シミュレーション","ネットワーク分析"],
+    domainKw:["社会シミュレーション","行動経済学","公共政策","都市計画"],
+    interestKw:["AI倫理","データサイエンス","社会システム"],
+    hobbyKw:["ジャズ","海外旅行","映画鑑賞","コーヒー"],
+    bio:"社会現象の計算機シミュレーションによる解明。行動経済学とAIを組み合わせた政策立案支援。"
+  },
+  {
+    id:7, name:"小林 誠司", inst:"筑波大学 システム情報工学研究科", rank:"准教授",
+    methodKw:["自然言語処理","テキストマイニング","知識グラフ","感情分析"],
+    domainKw:["対話システム","教育工学","法律AI","医療AI"],
+    interestKw:["多言語処理","低リソース言語","認知科学"],
+    hobbyKw:["読書","落語","囲碁","料理"],
+    bio:"大規模言語モデルを用いた対話システムと知識表現の研究。多言語・低リソース言語処理にも注力。"
+  },
+  {
+    id:8, name:"松本 優子", inst:"九州大学 理学研究院", rank:"教授",
+    methodKw:["マテリアルズインフォマティクス","薄膜技術","表面科学","X線解析"],
+    domainKw:["ナノマテリアル","電池材料","サステナブル素材","触媒"],
+    interestKw:["データ駆動材料設計","AI材料探索","再生可能エネルギー"],
+    hobbyKw:["茶道","陶芸","旅行","登山"],
+    bio:"ナノ構造材料の合成と評価。エネルギー貯蔵用材料の開発とAIによる新材料探索を推進。"
+  },
+  {
+    id:9, name:"中村 拓哉", inst:"北海道大学 水産科学研究院", rank:"助教",
+    methodKw:["環境DNA","バイオインフォマティクス","統計モデリング","衛星リモートセンシング"],
+    domainKw:["海洋生態学","水産資源管理","生物多様性","気候変動適応"],
+    interestKw:["機械学習","データビジュアライゼーション","保全生物学"],
+    hobbyKw:["ダイビング","釣り","キャンプ","写真"],
+    bio:"環境DNAを用いた非侵襲的生態調査と機械学習による水産資源の持続可能な管理を研究。"
+  },
+  {
+    id:10, name:"山口 香奈", inst:"早稲田大学 人間科学学術院", rank:"講師",
+    methodKw:["脳波解析","ウェアラブルセンサ","感情計算","信号処理"],
+    domainKw:["認知神経科学","メンタルヘルステクノロジー","ヒューマンファクター"],
+    interestKw:["機械学習","VR/AR","神経フィードバック"],
+    hobbyKw:["ヨガ","瞑想","ジャズ","読書","旅行"],
+    bio:"脳波と行動指標を組み合わせた感情・認知状態の推定システム開発。VR空間での認知実験も実施。"
+  },
+  {
+    id:11, name:"藤田 建司", inst:"大阪工業大学 情報科学部", rank:"教授",
+    methodKw:["コンピュータビジョン","3D点群処理","深層学習","SLAM"],
+    domainKw:["自動運転","拡張現実","産業検査","スポーツ分析"],
+    interestKw:["ロボティクス","強化学習","スポーツ科学"],
+    hobbyKw:["サッカー","マラソン","料理","旅行"],
+    bio:"深層学習を用いた実環境での画像認識・3D空間理解。自動運転と産業用AR応用を中心に研究。"
+  },
+  {
+    id:12, name:"森田 京子", inst:"神戸大学 経営学研究科", rank:"准教授",
+    methodKw:["データサイエンス","意思決定支援","最適化","シミュレーション"],
+    domainKw:["サプライチェーン","組織論","デジタルトランスフォーメーション","ビジネスAI"],
+    interestKw:["AI倫理","行動経済学","社会システム"],
+    hobbyKw:["バレーボール","旅行","読書","コーヒー"],
+    bio:"AIを活用した企業意思決定支援システムの研究。サプライチェーン最適化とDXを専門とする。"
+  }
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let currentMode = 'sync';
+let currentMapView = 'scatter';
+let matchResults = {sync:[],cross:[],seren:[],hobby:[]};
+let likedMap = {}; // id -> star count (0=none,1-3=star)
+let currentAIPanelId = null;
+let myProfile = {};
+let canvasNodes = [];
+let selectedCardId = null;
+
+// ============================================================
+// UTILITY
+// ============================================================
+function jaccard(a, b) {
+  if (!a.length && !b.length) return 0;
+  const sa = new Set(a.map(x=>x.toLowerCase()));
+  const sb = new Set(b.map(x=>x.toLowerCase()));
+  const inter = [...sa].filter(x=>sb.has(x)).length;
+  const union = new Set([...sa,...sb]).size;
+  return union ? inter/union : 0;
+}
+
+function cosineSim(a, b) {
+  if (!a.length || !b.length) return 0;
+  const all = [...new Set([...a,...b])];
+  const va = all.map(k => a.filter(x=>x===k).length);
+  const vb = all.map(k => b.filter(x=>x===k).length);
+  const dot = va.reduce((s,v,i)=>s+v*vb[i],0);
+  const ma = Math.sqrt(va.reduce((s,v)=>s+v*v,0));
+  const mb = Math.sqrt(vb.reduce((s,v)=>s+v*v,0));
+  return (ma&&mb) ? dot/(ma*mb) : 0;
+}
+
+const BRIDGE_KW = ["教育","デザイン","創造性","倫理","持続可能","社会","コミュニティ","文化","哲学","アート","環境","健康"];
+function bridgeBonus(kwsA, kwsB) {
+  const all = [...kwsA,...kwsB].map(k=>k.toLowerCase());
+  return Math.min(BRIDGE_KW.filter(b=>all.some(k=>k.includes(b))).length * 0.15, 0.6);
+}
+
+// Bell-shaped complement score: peaks at j=0.5
+function complementScore(j) { return Math.min(j*(1-j)*4, 1); }
+
+// Institution bonus
+function instBonus(a, b) {
+  if (!a||!b) return 0;
+  if (a===b) return 1;
+  const top = ['東京','京都','大阪','東北','九州','名古屋','北海道','筑波','早稲田','慶應'];
+  const ua = top.find(t=>a.includes(t));
+  const ub = top.find(t=>b.includes(t));
+  return (ua&&ub&&ua===ub) ? 0.7 : 0;
+}
+
+// Get weight values (normalized 0-1 sum)
+function getWeights() {
+  const vals = {
+    sync: +document.getElementById('wSync').value,
+    cross: +document.getElementById('wCross').value,
+    seren: +document.getElementById('wSeren').value,
+    hobby: +document.getElementById('wHobby').value,
+  };
+  return vals; // used as multipliers per mode
+}
+
+// ============================================================
+// SCORING ENGINES
+// ============================================================
+function scoreSync(me, r) {
+  // 研究手法 + 応用領域の両方を合算して研究類似度とする
+  const myAll = [...me.methodKw, ...me.domainKw];
+  const rAll  = [...r.methodKw,  ...r.domainKw];
+  const jAll  = jaccard(myAll, rAll);
+  const jMethod = jaccard(me.methodKw, r.methodKw);
+  const jDomain = jaccard(me.domainKw, r.domainKw);
+  const cosInt  = cosineSim([...me.methodKw,...me.interestKw],[...r.methodKw,...r.interestKw]);
+  const ib = instBonus(me.inst, r.inst);
+  const exactBonus = jAll > 0.4 ? 0.1 : 0;
+  const raw = 0.4*jAll + 0.15*jMethod + 0.15*jDomain + 0.15*cosInt + 0.1*ib + exactBonus;
+  const w = getWeights().sync / 5;
+  return {
+    total: Math.min(raw * (0.6 + 0.4*w), 1),
+    breakdown: {"研究KW重複": jAll, "手法一致": jMethod, "領域一致": jDomain, "機関ボーナス": ib},
+    researchDist: 1 - jAll,
+    feasibility: 0.4 + jAll*0.6,
+    matchedKw: myAll.filter(k => rAll.map(x=>x.toLowerCase()).includes(k.toLowerCase()))
+  };
+}
+
+function scoreCross(me, r) {
+  // 補完性：自分の手法 × 相手の領域、または自分の領域 × 相手の手法
+  const myMethod = me.methodKw, myDomain = me.domainKw;
+  const rMethod  = r.methodKw,  rDomain  = r.domainKw;
+  const comp1 = jaccard(myMethod, rDomain);   // 自手法 × 他領域
+  const comp2 = jaccard(myDomain, rMethod);   // 自領域 × 他手法
+  const complementarity = Math.max(comp1, comp2);
+  const jRes = jaccard([...myMethod,...myDomain],[...rMethod,...rDomain]);
+  const bridge = jaccard(me.interestKw, [...r.methodKw,...r.domainKw,...r.interestKw]);
+  const bellScore = complementScore(jRes);
+  const raw = 0.45*complementarity + 0.30*bellScore + 0.25*bridge;
+  const w = getWeights().cross / 5;
+  return {
+    total: Math.min(raw * (0.6 + 0.4*w), 1),
+    breakdown: {"補完性（手法×領域）": complementarity, "中間距離スコア": bellScore, "ブリッジ可能性": bridge},
+    researchDist: 0.35 + (1-jRes)*0.45,
+    feasibility: 0.25 + complementarity*0.65,
+    matchedKw: myMethod.filter(k=>rDomain.map(x=>x.toLowerCase()).includes(k.toLowerCase()))
+              .concat(myDomain.filter(k=>rMethod.map(x=>x.toLowerCase()).includes(k.toLowerCase())))
+  };
+}
+
+function scoreSeren(me, r) {
+  const myAll = [...me.methodKw,...me.domainKw];
+  const rAll  = [...r.methodKw,...r.domainKw];
+  const jRes  = jaccard(myAll, rAll);
+  const distScore = 1 - jRes;
+  const extremeBonus = jRes < 0.05 ? 0.3 : 0; // 完全異分野ボーナス
+  const minContact = jaccard([...me.interestKw,...me.hobbyKw],[...r.interestKw,...r.hobbyKw]);
+  if (minContact < 0.01 && jRes < 0.01) { // 完全0接点はノイズ除外
+    return { total:0.05, breakdown:{"研究距離":distScore,"極端異分野":extremeBonus,"最低限接点":minContact}, researchDist:0.95, feasibility:0.05, matchedKw:[] };
+  }
+  const bridge = bridgeBonus([...me.interestKw,...me.hobbyKw],[...r.interestKw,...r.hobbyKw]);
+  const raw = 0.50*distScore + 0.25*minContact + 0.15*bridge + 0.10*extremeBonus;
+  const w = getWeights().seren / 5;
+  return {
+    total: Math.min(raw * (0.6 + 0.4*w), 1),
+    breakdown: {"研究距離スコア": distScore, "最低限接点": minContact, "橋渡し概念": bridge},
+    researchDist: 0.55 + distScore*0.40,
+    feasibility: 0.10 + minContact*0.40 + bridge*0.20,
+    matchedKw: me.hobbyKw.filter(k=>r.hobbyKw.map(x=>x.toLowerCase()).includes(k.toLowerCase()))
+  };
+}
+
+function scoreHobby(me, r) {
+  const jHobby = jaccard(me.hobbyKw, r.hobbyKw);
+  const jInt   = jaccard(me.interestKw, r.interestKw);
+  const jRes   = jaccard([...me.methodKw,...me.domainKw],[...r.methodKw,...r.domainKw]);
+  const raw = 0.60*jHobby + 0.20*jInt + 0.20*(jHobby>0.3?0.8:0.2);
+  const w = getWeights().hobby / 5;
+  return {
+    total: Math.min(raw * (0.6 + 0.4*w), 1),
+    breakdown: {"趣味一致(Jaccard)": jHobby, "関心一致": jInt, "即実行度": jHobby>0.3?0.8:0.2},
+    researchDist: 0.2 + (1-jRes)*0.5,
+    feasibility: 0.35 + jHobby*0.55,
+    matchedKw: me.hobbyKw.filter(k=>r.hobbyKw.map(x=>x.toLowerCase()).includes(k.toLowerCase()))
+  };
+}
+
+// ============================================================
+// MATCH REASONS
+// ============================================================
+const MODE_DESC = {
+  sync:  {icon:"🎯", text:"既存の強みをさらに尖らせる、近しい研究領域の先生。論文共著・研究室連携・JSPSの共同申請など、即戦力的なコラボが期待できます。"},
+  cross: {icon:"🔄", text:"スキルが補完関係になる異分野の先生。自分の手法を相手の領域へ、または相手の技術を自分の領域へ応用することで、新しい価値が生まれます。"},
+  seren: {icon:"✨", text:"全くの異分野だが、思いがけない化学反応が生まれそうな先生。分野の壁を超えた挑戦的・萌芽的研究（JST さきがけ候補など）のきっかけになりえます。"},
+  hobby: {icon:"☕", text:"研究領域よりも趣味・マインドがマッチし、意気投合してすぐ動けそうな先生。人間関係から始まる共同研究は、長期的な信頼関係につながります。"}
+};
+
+function getReason(mode, me, r, sc) {
+  const mk = sc.matchedKw.slice(0,3);
+  const reasons = {
+    sync:  mk.length ? `研究キーワード「${mk.join('・')}」が共通。同分野での深い議論・共同執筆が即座に始められます。` : `研究アプローチや手法に類似性があり、専門分野の深化で補い合える関係です。`,
+    cross: `あなたの「${me.methodKw[0]||'手法'}」を${r.name}先生の「${r.domainKw[0]||'領域'}」へ応用、または逆の融合研究が成立しやすい中間距離の組み合わせです。`,
+    seren: mk.length ? `趣味「${mk.join('・')}」という意外な共通点が、全く新しいテーマ発掘の橋渡しになりそうです。` : `研究は遠いが関心の接点から思いがけないコラボが生まれる可能性があります。`,
+    hobby: mk.length ? `「${mk.join('・')}」が共通の趣味。まずカジュアルに話して人間関係を作れます。` : `価値観・ライフスタイルの共鳴が見られます。意気投合してすぐ動けるタイプです。`
+  };
+  return reasons[mode];
+}
+
+// ============================================================
+// AI PANEL CONTENT
+// ============================================================
+function getAIContent(mode, me, r) {
+  const mk = r.scores[mode].matchedKw;
+  const why = {
+    sync:  `${r.name}先生はあなたと同じ「${[...r.methodKw,...r.domainKw].filter(k=>[...me.methodKw,...me.domainKw].map(x=>x.toLowerCase()).includes(k.toLowerCase())).slice(0,2).join('・')||r.methodKw[0]}」領域を研究されており、研究キーワードの重複度が最も高い組み合わせです。論文共著・学会セッションの共同企画など、即戦力のコラボが可能です。`,
+    cross: `あなたの手法「${me.methodKw[0]}」と${r.name}先生の領域「${r.domainKw[0]}」は現在ほぼ独立していますが、組み合わせることで双方に新規性の高い研究が生まれます。クロスオーバー補完性スコアが上位です。`,
+    seren: `${r.name}先生の専門「${r.domainKw[0]}」はあなたの研究領域と最も距離が遠いカテゴリーに属しています。この「研究距離の遠さ」こそが、既存の枠を超えたブレークスルーのきっかけになりえます。`,
+    hobby: `研究領域を超えて${mk.length?`「${mk.join('・')}」という共通の趣味`:'価値観・ライフスタイルの共鳴'}があります。人間的な相性から始まる共同研究は継続率が高く、長期プロジェクトに向いています。`
+  };
+  const questions = {
+    sync:  [`先生の${r.methodKw[0]}研究において、最近最も難しいと感じている課題はどこですか？`,`データセットや実験環境のリソース共有は可能でしょうか？`,`現在の手法の中で、他分野にも応用できそうなものはありますか？`],
+    cross: [`「${r.domainKw[0]}」の分野で、AIや機械学習はどの段階まで活用されていますか？`,`私の「${me.methodKw[0]}」技術が先生の研究のどこに役立つか仮説を一緒に立てませんか？`,`異分野融合で最大の障壁（予算・言語・評価基準）は何だと思いますか？`],
+    seren: [`先生の研究で「全く別の分野の人に説明したい」と感じたエピソードはありますか？`,`もし分野の制約がなければどんな研究に挑戦したいですか？`,`異分野の人との交流で、研究の発想が変わった経験はありますか？`],
+    hobby: [`${mk[0]||r.hobbyKw[0]}はいつ頃から続けていますか？`,`研究の合間のリフレッシュ方法を教えてください。`,`趣味から研究のヒントを得たことはありますか？`]
+  };
+  const collab = {
+    sync:  [`${r.methodKw[0]}×${me.methodKw[0]}の精度向上に関する共同論文`,`データ・実験環境のリソース共有型プロジェクト`,`JSPS科研費 AB班連携申請`],
+    cross: [`「${me.methodKw[0]}」技術を「${r.domainKw[0]}」領域へ応用した実証研究`,`異分野横断型ワークショップ・シンポジウムの共同企画`,`JST CREST等クロスディシプリナリー資金の共同申請`],
+    seren: [`萌芽的・挑戦的研究（JST さきがけ候補）`,`双方の視点からの問題再定義ワークショップ`,`一般向け共同アウトリーチ・書籍執筆`],
+    hobby: [`趣味起点の非公式勉強会・朝活研究会`,`ライフスタイルとテクノロジーの交点を探るカジュアル研究`,`学会外ネットワーキングを活かしたプロジェクト`]
+  };
+  const risk = {
+    sync:  `分野が近いため差別化が難しく「競合」になるリスクがあります。研究テーマの棲み分けと役割分担を最初に明確化することが重要です。`,
+    cross: `専門用語・評価基準が異なるため、コミュニケーションコストが高くなりがちです。共通語彙の構築と定期的な進捗確認が不可欠です。`,
+    seren: `テーマが発散しやすく成果までに時間がかかる場合があります。まず小さな問いを立て、スモールスタートでフィジビリティを確認しましょう。`,
+    hobby: `人間的相性は良くても研究上の利害が一致しない可能性があります。関係構築優先でスタートし、研究連携は段階的に検討することを推奨します。`
+  };
+  const icebreak = {
+    sync:  `「最近の${r.domainKw[0]||r.methodKw[0]}界隈で一番熱いテーマは何ですか？」から始めると自然です。`,
+    cross: `「先生の研究で、AIがあればもっと解けると思う問題はどこですか？」が効果的な入り口です。`,
+    seren: `「最近、全く別の分野の話を聞いてハッとした経験はありますか？」という問いかけから。`,
+    hobby: `「${mk[0]||r.hobbyKw[0]}はいつ頃から？」の一言で十分です。共通趣味があれば話は自然に弾みます。`
+  };
+  return { why: why[mode], questions: questions[mode], collab: collab[mode], risk: risk[mode], icebreak: icebreak[mode] };
+}
+
+// ============================================================
+// RUN MATCHING
+// ============================================================
+function runMatching() {
+  const name = document.getElementById('myName').value.trim();
+  if (!name) { alert('名前を入力してください'); return; }
+  const methodKw = parseKw(document.getElementById('myMethodKw').value);
+  const domainKw = parseKw(document.getElementById('myDomainKw').value);
+  if (!methodKw.length && !domainKw.length) { alert('研究キーワードを入力してください'); return; }
+
+  myProfile = {
+    name, inst: document.getElementById('myInst').value,
+    rank: document.getElementById('myRank').value,
+    methodKw, domainKw,
+    interestKw: parseKw(document.getElementById('myInterestKw').value),
+    hobbyKw: parseKw(document.getElementById('myHobbyKw').value)
+  };
+
+  const steps = [ls1,ls2,ls3,ls4];
+  document.getElementById('loadingOverlay').classList.add('active');
+  let step = 0;
+  steps.forEach(s => s.classList.remove('active'));
+  const iv = setInterval(() => {
+    if (step < steps.length) { document.getElementById('ls'+(step+1)).classList.add('active'); step++; }
+    else { clearInterval(iv); }
+  }, 300);
+
+  setTimeout(() => {
+    const searchKw = parseKw(document.getElementById('searchInput').value);
+
+    const scored = RESEARCHERS.map(r => {
+      const sc = {
+        sync:  scoreSync(myProfile, r),
+        cross: scoreCross(myProfile, r),
+        seren: scoreSeren(myProfile, r),
+        hobby: scoreHobby(myProfile, r)
+      };
+      // Search keyword boost
+      if (searchKw.length) {
+        const rAll = [...r.methodKw,...r.domainKw,...r.interestKw,...r.hobbyKw].map(k=>k.toLowerCase());
+        const boost = searchKw.filter(k=>rAll.some(rk=>rk.includes(k.toLowerCase()))).length * 0.05;
+        ['sync','cross','seren','hobby'].forEach(m => { sc[m].total = Math.min(sc[m].total + boost, 1); });
+      }
+      return { ...r, scores: sc };
+    });
+
+    matchResults.sync  = [...scored].sort((a,b)=>b.scores.sync.total  - a.scores.sync.total);
+    matchResults.cross = [...scored].sort((a,b)=>b.scores.cross.total - a.scores.cross.total);
+    matchResults.seren = [...scored].sort((a,b)=>b.scores.seren.total - a.scores.seren.total);
+    matchResults.hobby = [...scored].sort((a,b)=>b.scores.hobby.total - a.scores.hobby.total);
+
+    document.getElementById('loadingOverlay').classList.remove('active');
+    document.getElementById('welcomeState').style.display = 'none';
+    updateTabCounts();
+    renderModeDesc();
+    renderCards();
+    redrawMap();
+  }, 1600);
+}
+
+// ============================================================
+// SLIDER
+// ============================================================
+function updateSliderVal(inputId, valId) {
+  document.getElementById(valId).textContent = document.getElementById(inputId).value;
+}
+
+// ============================================================
+// TAB SWITCH
+// ============================================================
+const MODE_COLORS = {sync:'#3b82f6',cross:'#10b981',seren:'#8b5cf6',hobby:'#f59e0b'};
+const MODE_LABELS = {sync:'シンクロ探索',cross:'クロスオーバー',seren:'セレンディピティ',hobby:'趣味・マインド一致'};
+
+function switchTab(mode, el) {
+  currentMode = mode;
+  document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderModeDesc();
+  renderCards();
+  redrawMap();
+  closeAIPanel();
+}
+
+function updateTabCounts() {
+  ['sync','cross','seren','hobby'].forEach(m => {
+    document.getElementById('cnt-'+m).textContent = matchResults[m].length;
+  });
+}
+
+function renderModeDesc() {
+  const d = MODE_DESC[currentMode];
+  document.getElementById('modeDesc').innerHTML = `<span class="mode-desc-icon">${d.icon}</span><span>${d.text}</span>`;
+  document.getElementById('modeDesc').style.borderLeft = `3px solid ${MODE_COLORS[currentMode]}`;
+}
+
+// ============================================================
+// RENDER CARDS
+// ============================================================
+const AVATAR_COLORS = [
+  ['#3b82f6','#1e3a8a'],['#10b981','#065f46'],['#8b5cf6','#4c1d95'],
+  ['#f59e0b','#78350f'],['#ef4444','#7f1d1d'],['#06b6d4','#164e63'],
+  ['#ec4899','#831843'],['#84cc16','#365314'],['#f97316','#7c2d12'],
+  ['#6366f1','#312e81'],['#14b8a6','#134e4a'],['#a855f7','#581c87']
+];
+
+function renderCards() {
+  if (!matchResults[currentMode].length) return;
+  const data = [...matchResults[currentMode]];
+  if (document.getElementById('sortSel').value === 'name') data.sort((a,b)=>a.name.localeCompare(b.name,'ja'));
+  const col = MODE_COLORS[currentMode];
+  const list = document.getElementById('cardList');
+  list.innerHTML = '';
+  data.forEach((r, idx) => {
+    const sc = r.scores[currentMode];
+    const pct = Math.round(sc.total * 100);
+    const av = AVATAR_COLORS[r.id % AVATAR_COLORS.length];
+    const star = likedMap[r.id] || 0;
+    const reason = getReason(currentMode, myProfile, r, sc);
+    const myAll = [...myProfile.methodKw,...myProfile.domainKw];
+    const rAll  = [...r.methodKw,...r.domainKw];
+    const matchedKw = myAll.filter(k=>rAll.map(x=>x.toLowerCase()).includes(k.toLowerCase()));
+
+    const bdownHtml = Object.entries(sc.breakdown).map(([k,v])=>`
+      <div class="smb-row">
+        <div class="smb-label">${k}</div>
+        <div class="smb-track"><div class="smb-fill" style="width:${Math.round(v*100)}%;background:${col}"></div></div>
+        <div class="smb-val" style="color:${col}">${Math.round(v*100)}%</div>
+      </div>`).join('');
+
+    const kwHtml = [...new Set([...matchedKw.slice(0,3), ...r.methodKw.slice(0,2)])].slice(0,5).map(k=>{
+      const isMatch = matchedKw.map(x=>x.toLowerCase()).includes(k.toLowerCase());
+      return `<span class="kwtag ${isMatch?'match':''}" style="background:${col}${isMatch?'25':'15'};color:${col}">${k}</span>`;
+    }).join('');
+
+    const el = document.createElement('div');
+    el.className = 'rcard' + (selectedCardId===r.id?' selected':'');
+    el.setAttribute('data-mode', currentMode);
+    el.setAttribute('data-id', r.id);
+    el.innerHTML = `
+      <div class="rc-top">
+        <div class="rc-avatar" style="background:${av[1]};color:${av[0]}">${r.name[0]}</div>
+        <div class="rc-info">
+          <div class="rc-name">${r.name}</div>
+          <div class="rc-inst">${r.inst}</div>
+          <div class="rc-rank-txt">${r.rank}</div>
+        </div>
+        <div class="rc-actions">
+          <span class="rank-num" style="background:${col}20;color:${col}">#${idx+1}</span>
+          <button class="like-btn ${star>0?'liked':''}" onclick="toggleLike(${r.id},event)">${star>0?'❤️':'🤍'}</button>
+          <button class="star-btn ${star>=1?'s1':''}" onclick="setStar(${r.id},1,event)" title="★1">★</button>
+          <button class="star-btn ${star>=2?'s2':''}" onclick="setStar(${r.id},2,event)" title="★2">★</button>
+          <button class="star-btn ${star>=3?'s3':''}" onclick="setStar(${r.id},3,event)" title="★3">★</button>
+        </div>
+      </div>
+      <div class="rc-score">
+        <div class="score-pct" style="color:${col}">${pct}%</div>
+        <div class="score-mini-bars">${bdownHtml}</div>
+      </div>
+      <div class="rc-kws">${kwHtml}</div>
+      <div class="rc-reason">${reason}</div>
+    `;
+    el.addEventListener('click', () => openAIPanel(r.id, currentMode));
+    list.appendChild(el);
+  });
+}
+
+// ============================================================
+// LIKE & STAR
+// ============================================================
+function toggleLike(id, e) {
+  if (e) e.stopPropagation();
+  likedMap[id] = likedMap[id] ? 0 : 1;
+  updateLikedUI(); renderCards();
+}
+function setStar(id, star, e) {
+  if (e) e.stopPropagation();
+  likedMap[id] = likedMap[id] === star ? 0 : star;
+  updateLikedUI(); renderCards();
+}
+function updateLikedUI() {
+  const cnt = Object.values(likedMap).filter(v=>v>0).length;
+  document.getElementById('likedCount').textContent = cnt;
+  document.getElementById('likedBarCnt').textContent = cnt;
+  document.getElementById('likedBar').classList.toggle('visible', cnt > 0);
+}
+
+// ============================================================
+// AI PANEL
+// ============================================================
+function openAIPanel(id, mode) {
+  selectedCardId = id;
+  currentAIPanelId = id;
+  // Highlight card
+  document.querySelectorAll('.rcard').forEach(c => c.classList.toggle('selected', +c.dataset.id === id));
+
+  const r = RESEARCHERS.find(x=>x.id===id);
+  const sc = matchResults[mode].find(x=>x.id===id);
+  if (!r||!sc) return;
+  const col = MODE_COLORS[mode];
+  const pct = Math.round(sc.scores[mode].total*100);
+  const ai = getAIContent(mode, myProfile, r);
+  const star = likedMap[id]||0;
+
+  document.getElementById('apName').textContent = r.name;
+  document.getElementById('apSub').innerHTML = `${r.inst} ／ ${r.rank} ／ <span style="color:${col};font-weight:700">${MODE_LABELS[mode]} ${pct}%</span>`;
+  document.getElementById('apLikeBtn').textContent = star>0 ? `❤️ いいね(★${star})` : '❤️ いいね';
+
+  // Profile keywords
+  const myAll = [...myProfile.methodKw,...myProfile.domainKw];
+  const rAll  = [...r.methodKw,...r.domainKw];
+  const matchedKwList = myAll.filter(k=>rAll.map(x=>x.toLowerCase()).includes(k.toLowerCase()));
+
+  document.getElementById('aiBody').innerHTML = `
+    <!-- Profile -->
+    <div>
+      <div class="ai-sec-title">👤 プロファイル</div>
+      <div class="profile-grid">
+        <div class="pitem">
+          <div class="pitem-label">🔧 研究手法</div>
+          <div class="pitem-val">${r.methodKw.map(k=>{
+            const m=matchedKwList.map(x=>x.toLowerCase()).includes(k.toLowerCase());
+            return `<span class="kwtag ${m?'match':''}" style="display:inline-block;margin:2px;background:${col}${m?'25':'15'};color:${col}">${k}</span>`;
+          }).join('')}</div>
+        </div>
+        <div class="pitem">
+          <div class="pitem-label">🌍 応用領域</div>
+          <div class="pitem-val">${r.domainKw.map(k=>{
+            const m=matchedKwList.map(x=>x.toLowerCase()).includes(k.toLowerCase());
+            return `<span class="kwtag ${m?'match':''}" style="display:inline-block;margin:2px;background:${col}${m?'25':'15'};color:${col}">${k}</span>`;
+          }).join('')}</div>
+        </div>
+        <div class="pitem">
+          <div class="pitem-label">🌐 関心キーワード</div>
+          <div class="pitem-val">${r.interestKw.map(k=>`<span class="kwtag" style="display:inline-block;margin:2px;background:#2a3a5520;color:#8899bb">${k}</span>`).join('')}</div>
+        </div>
+        <div class="pitem">
+          <div class="pitem-label">☕ 趣味</div>
+          <div class="pitem-val">${r.hobbyKw.map(k=>{
+            const m=(myProfile.hobbyKw||[]).map(x=>x.toLowerCase()).includes(k.toLowerCase());
+            return `<span class="kwtag ${m?'match':''}" style="display:inline-block;margin:2px;background:#78350f${m?'30':'15'};color:#f59e0b">${k}</span>`;
+          }).join('')}</div>
+        </div>
+        <div class="pitem" style="grid-column:1/-1">
+          <div class="pitem-label">📝 Bio</div>
+          <div class="pitem-val">${r.bio}</div>
+        </div>
+      </div>
+    </div>
+    <!-- Why -->
+    <div>
+      <div class="ai-sec-title">🎯 なぜこの人がマッチするか</div>
+      <div class="ai-text">${ai.why}</div>
+    </div>
+    <!-- Questions -->
+    <div>
+      <div class="ai-sec-title">💬 最初に聞くべき3つの質問</div>
+      <div class="q-list">${ai.questions.map((q,i)=>`
+        <div class="q-item"><div class="q-num">${i+1}</div><div>${q}</div></div>`).join('')}
+      </div>
+    </div>
+    <!-- Collab -->
+    <div>
+      <div class="ai-sec-title">🚀 想定される共同研究テーマ</div>
+      <div class="collab-list">${ai.collab.map(c=>`
+        <div class="collab-item"><span style="color:${col}">▸</span>${c}</div>`).join('')}
+      </div>
+    </div>
+    <!-- Icebreak -->
+    <div>
+      <div class="ai-sec-title">☕ アイスブレイク提案</div>
+      <div class="ai-text">${ai.icebreak}</div>
+    </div>
+    <!-- Risk -->
+    <div>
+      <div class="ai-sec-title">⚠️ 失敗リスク・注意点</div>
+      <div class="risk-box"><span>⚠️</span><span>${ai.risk}</span></div>
+    </div>
+  `;
+  document.getElementById('aiPanel').classList.add('open');
+  // Highlight on map
+  redrawMap();
+}
+
+function closeAIPanel() {
+  document.getElementById('aiPanel').classList.remove('open');
+  selectedCardId = null;
+  document.querySelectorAll('.rcard').forEach(c=>c.classList.remove('selected'));
+  redrawMap();
+}
+
+function toggleLikeFromPanel() {
+  if (!currentAIPanelId) return;
+  const id = currentAIPanelId;
+  likedMap[id] = likedMap[id] ? 0 : 1;
+  document.getElementById('apLikeBtn').textContent = likedMap[id] ? '❤️ いいね済' : '❤️ いいね';
+  updateLikedUI(); renderCards();
+}
+
+// ============================================================
+// MAP VIEWS
+// ============================================================
+function setMapView(v) {
+  currentMapView = v;
+  ['scatter','network','bubble'].forEach(x=>{
+    document.getElementById('mv'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active', x===v);
+  });
+  redrawMap();
+}
+
+function getFilteredModes() {
+  const checks = document.querySelectorAll('#filterChecks input[type=checkbox]');
+  const modes = ['sync','cross','seren','hobby'];
+  return modes.filter((_,i) => checks[i]?.checked);
+}
+
+function redrawMap() {
+  if (!matchResults.sync.length) return;
+  const canvas = document.getElementById('mainCanvas');
+  const wrap = canvas.parentElement;
+  canvas.width  = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  if (currentMapView === 'scatter') drawScatter(canvas);
+  else if (currentMapView === 'network') drawNetwork(canvas);
+  else drawBubble(canvas);
+}
+
+// ---- SCATTER ----
+function drawScatter(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const PAD = 44;
+  canvasNodes = [];
+
+  // BG & grid
+  ctx.fillStyle = '#111827'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#1a2a3f'; ctx.lineWidth=1;
+  for (let i=1;i<5;i++) {
+    const x=PAD+(W-PAD*2)*i/5; ctx.beginPath();ctx.moveTo(x,PAD);ctx.lineTo(x,H-PAD);ctx.stroke();
+    const y=PAD+(H-PAD*2)*i/5; ctx.beginPath();ctx.moveTo(PAD,y);ctx.lineTo(W-PAD,y);ctx.stroke();
+  }
+  // Axes
+  ctx.strokeStyle='#2a3a55'; ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(PAD,PAD);ctx.lineTo(PAD,H-PAD);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(PAD,H-PAD);ctx.lineTo(W-PAD,H-PAD);ctx.stroke();
+  // Y-axis label
+  ctx.save();ctx.translate(14,H/2);ctx.rotate(-Math.PI/2);
+  ctx.fillStyle='#3a4a6a';ctx.font='10px sans-serif';ctx.textAlign='center';
+  ctx.fillText('↑ 実行可能性 高',0,0);ctx.restore();
+
+  const activeModes = getFilteredModes();
+  const plotted = new Map();
+
+  activeModes.forEach(mode => {
+    matchResults[mode].forEach((r,idx) => {
+      if (plotted.has(r.id)) return;
+      const sc = r.scores[mode];
+      const x = PAD + sc.researchDist * (W-PAD*2);
+      const y = (H-PAD) - sc.feasibility * (H-PAD*2);
+      plotted.set(r.id, {r, mode, x, y, idx});
+    });
+  });
+
+  // Draw connections to selected
+  if (selectedCardId) {
+    const sel = [...plotted.values()].find(n=>n.r.id===selectedCardId);
+    if (sel) {
+      [...plotted.values()].forEach(n=>{
+        if (n.r.id===sel.r.id) return;
+        ctx.save(); ctx.globalAlpha=0.07; ctx.strokeStyle='#fff';
+        ctx.lineWidth=1; ctx.setLineDash([3,5]);
+        ctx.beginPath();ctx.moveTo(sel.x,sel.y);ctx.lineTo(n.x,n.y);ctx.stroke();
+        ctx.restore();
+      });
+    }
+  }
+
+  // Draw nodes
+  plotted.forEach(({r,mode,x,y,idx}) => {
+    const col = MODE_COLORS[mode];
+    const isActive = (mode===currentMode);
+    const isSelected = (r.id===selectedCardId);
+    const radius = isSelected ? 13 : isActive ? 9 : 6;
+    const alpha = isActive ? 0.9 : 0.25;
+    ctx.save(); ctx.globalAlpha=alpha;
+    if (isActive||isSelected) {
+      const grd = ctx.createRadialGradient(x,y,2,x,y,20);
+      grd.addColorStop(0,col+'55');grd.addColorStop(1,col+'00');
+      ctx.fillStyle=grd;ctx.beginPath();ctx.arc(x,y,20,0,Math.PI*2);ctx.fill();
+    }
+    ctx.fillStyle=col; ctx.strokeStyle=isSelected?'#fff':col+'aa';
+    ctx.lineWidth=isSelected?2.5:1.5;
+    ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();ctx.stroke();
+    if (isActive&&idx<3){ctx.fillStyle='#fff';ctx.font='bold 8px sans-serif';ctx.textAlign='center';ctx.fillText(idx+1,x,y+3);}
+    if (isActive||isSelected){
+      ctx.fillStyle='#e8edf5';ctx.font=`${isSelected?'bold ':''}10px sans-serif`;ctx.textAlign='left';
+      ctx.fillText(r.name.split(' ')[0],x+radius+4,y+4);
+    }
+    ctx.restore();
+    canvasNodes.push({r,mode,x,y,radius:radius+5});
+  });
+
+  // YOU node
+  const myX=PAD+0.04*(W-PAD*2), myY=(H-PAD)-0.88*(H-PAD*2);
+  ctx.fillStyle='#fff';ctx.strokeStyle='#6366f1';ctx.lineWidth=3;
+  ctx.beginPath();ctx.arc(myX,myY,11,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#0a0e1a';ctx.font='bold 9px sans-serif';ctx.textAlign='center';
+  ctx.fillText('YOU',myX,myY+3.5);
+
+  // Top3 lines
+  (matchResults[currentMode]||[]).slice(0,3).forEach(r=>{
+    const node=canvasNodes.find(n=>n.r.id===r.id);
+    if(!node)return;
+    ctx.save();ctx.globalAlpha=0.2;ctx.strokeStyle=MODE_COLORS[currentMode];
+    ctx.lineWidth=1.5;ctx.setLineDash([4,5]);
+    ctx.beginPath();ctx.moveTo(myX,myY);ctx.lineTo(node.x,node.y);ctx.stroke();ctx.restore();
+  });
+}
+
+// ---- NETWORK ----
+function drawNetwork(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  canvasNodes=[];
+  ctx.fillStyle='#111827';ctx.fillRect(0,0,W,H);
+
+  const activeModes = getFilteredModes();
+  const researchers = [...new Map(
+    activeModes.flatMap(m=>matchResults[m]).map(r=>[r.id,r])
+  ).values()];
+
+  // Spring layout (simplified)
+  const cx=W/2, cy=H/2;
+  const positions = researchers.map((r,i)=>{
+    const angle=(i/researchers.length)*Math.PI*2;
+    const rad=Math.min(W,H)*0.35;
+    return {r, x:cx+Math.cos(angle)*rad, y:cy+Math.sin(angle)*rad};
+  });
+
+  // Draw edges
+  positions.forEach((a,i)=>{
+    positions.forEach((b,j)=>{
+      if(j<=i)return;
+      const kwA=[...a.r.methodKw,...a.r.domainKw];
+      const kwB=[...b.r.methodKw,...b.r.domainKw];
+      const shared=kwA.filter(k=>kwB.map(x=>x.toLowerCase()).includes(k.toLowerCase())).length;
+      if(shared===0)return;
+      ctx.save();ctx.globalAlpha=Math.min(shared*0.12,0.4);
+      ctx.strokeStyle='#3b82f6';ctx.lineWidth=shared;
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore();
+    });
+  });
+
+  // Center YOU
+  ctx.fillStyle='#fff';ctx.strokeStyle='#6366f1';ctx.lineWidth=3;
+  ctx.beginPath();ctx.arc(cx,cy,13,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#0a0e1a';ctx.font='bold 9px sans-serif';ctx.textAlign='center';
+  ctx.fillText('YOU',cx,cy+3.5);
+
+  // Draw nodes
+  positions.forEach(({r,x,y})=>{
+    const domMode = activeModes.reduce((best,m)=>{
+      const sc=r.scores?.[m]?.total||0;
+      return (!best||sc>r.scores?.[best]?.total)?m:best;
+    }, null) || 'sync';
+    const col=MODE_COLORS[domMode];
+    const isSelected=r.id===selectedCardId;
+    const radius=isSelected?12:8;
+    ctx.save();
+    if(isSelected){const grd=ctx.createRadialGradient(x,y,2,x,y,20);grd.addColorStop(0,col+'55');grd.addColorStop(1,col+'00');ctx.fillStyle=grd;ctx.beginPath();ctx.arc(x,y,20,0,Math.PI*2);ctx.fill();}
+    ctx.fillStyle=col;ctx.strokeStyle=isSelected?'#fff':col+'aa';ctx.lineWidth=isSelected?2.5:1.5;
+    ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#e8edf5';ctx.font='10px sans-serif';ctx.textAlign='left';
+    ctx.fillText(r.name.split(' ')[0],x+radius+4,y+4);
+    ctx.restore();
+    canvasNodes.push({r,mode:domMode,x,y,radius:radius+4});
+  });
+  // Legend
+  ctx.fillStyle='#4a5a7a';ctx.font='10px sans-serif';ctx.textAlign='left';
+  ctx.fillText('エッジ幅 = 共通キーワード数',10,20);
+}
+
+// ---- BUBBLE ----
+function drawBubble(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  canvasNodes=[];
+  ctx.fillStyle='#111827';ctx.fillRect(0,0,W,H);
+
+  const activeModes = getFilteredModes();
+  const researchers = [...new Map(
+    activeModes.flatMap(m=>matchResults[m]).map(r=>[r.id,r])
+  ).values()];
+
+  // Layout in grid
+  const cols = Math.ceil(Math.sqrt(researchers.length));
+  const cellW=W/cols, cellH=H/Math.ceil(researchers.length/cols);
+
+  researchers.forEach((r,i)=>{
+    const col=i%cols, row=Math.floor(i/cols);
+    const cx=cellW*col+cellW/2, cy=cellH*row+cellH/2;
+    const domMode = activeModes.reduce((best,m)=>{
+      const sc=r.scores?.[m]?.total||0;
+      return (!best||sc>r.scores?.[best]?.total)?m:best;
+    },null)||'sync';
+    const totalScore = activeModes.reduce((s,m)=>s+(r.scores?.[m]?.total||0),0);
+    const col2=MODE_COLORS[domMode];
+    const radius=10+totalScore*28;
+    const isSelected=r.id===selectedCardId;
+    ctx.save();
+    ctx.globalAlpha=0.7;
+    ctx.fillStyle=col2+'55';ctx.strokeStyle=isSelected?'#fff':col2;ctx.lineWidth=isSelected?3:1.5;
+    ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.globalAlpha=1;
+    ctx.fillStyle='#e8edf5';ctx.font=`${radius>25?'bold ':''}${Math.min(radius*0.45,11)}px sans-serif`;ctx.textAlign='center';
+    ctx.fillText(r.name.split(' ')[0],cx,cy+3);
+    ctx.restore();
+    canvasNodes.push({r,mode:domMode,x:cx,y:cy,radius:radius+4});
+  });
+  ctx.fillStyle='#4a5a7a';ctx.font='10px sans-serif';ctx.textAlign='left';
+  ctx.fillText('バブルサイズ = 全モードスコア合計',10,20);
+}
+
+// ============================================================
+// CANVAS EVENTS
+// ============================================================
+document.getElementById('mainCanvas').addEventListener('mousemove', function(e) {
+  const rect=this.getBoundingClientRect();
+  const mx=e.clientX-rect.left*(this.width/rect.width);
+  const my=e.clientY-rect.top*(this.height/rect.height);
+  const tip=document.getElementById('canvasTip');
+  let found=null;
+  for(const n of canvasNodes){if(Math.hypot(mx-n.x,my-n.y)<n.radius+4){found=n;break;}}
+  if(found){
+    const r=found.r, sc=r.scores?.[found.mode];
+    const pct=sc?Math.round(sc.total*100):0;
+    tip.style.display='block';
+    const tx=Math.min(found.x+14, this.width-170);
+    const ty=Math.max(found.y-50, 8);
+    tip.style.left=tx+'px'; tip.style.top=ty+'px';
+    tip.innerHTML=`<div class="tt-name">${r.name}</div><div class="tt-inst">${r.inst}</div>
+      <div class="tt-scores">
+        ${['sync','cross','seren','hobby'].map(m=>`
+          <div class="tt-row"><div class="tt-dot" style="background:${MODE_COLORS[m]}"></div>
+          <span style="color:${MODE_COLORS[m]}">${Math.round((r.scores?.[m]?.total||0)*100)}%</span>
+          <span style="color:var(--text-dim);font-size:9px">${MODE_LABELS[m]}</span></div>`).join('')}
+      </div>`;
+    this.style.cursor='pointer';
+  } else {
+    tip.style.display='none'; this.style.cursor='crosshair';
+  }
+});
+
+document.getElementById('mainCanvas').addEventListener('click', function(e) {
+  const rect=this.getBoundingClientRect();
+  const mx=e.clientX-rect.left*(this.width/rect.width);
+  const my=e.clientY-rect.top*(this.height/rect.height);
+  for(const n of canvasNodes){
+    if(Math.hypot(mx-n.x,my-n.y)<n.radius+4){
+      openAIPanel(n.r.id, currentMode); return;
+    }
+  }
+});
+
+// ============================================================
+// FILE UPLOAD
+// ============================================================
+const dropZone=document.getElementById('dropZone');
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop',e=>{
+  e.preventDefault();dropZone.classList.remove('drag-over');
+  const f=e.dataTransfer.files[0];if(f)handleFile({target:{files:[f]}});
+});
+function handleFile(ev) {
+  const f=ev.target.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const txt=e.target.result;
+    const get=(pattern)=>(txt.match(pattern)||[])[1]?.trim()||'';
+    const n=get(/名前[：:]\s*(.+)/);if(n)document.getElementById('myName').value=n;
+    const inst=get(/所属[：:]\s*(.+)/);if(inst)document.getElementById('myInst').value=inst;
+    const rank=get(/職位[：:]\s*(.+)/);if(rank)document.getElementById('myRank').value=rank;
+    const mk=get(/研究手法[：:]\s*(.+)/)||get(/手法[：:]\s*(.+)/);if(mk)document.getElementById('myMethodKw').value=mk;
+    const dk=get(/応用領域[：:]\s*(.+)/)||get(/領域[：:]\s*(.+)/);if(dk)document.getElementById('myDomainKw').value=dk;
+    const ik=get(/関心キーワード[：:]\s*(.+)/)||get(/研究以外[：:]\s*(.+)/);if(ik)document.getElementById('myInterestKw').value=ik;
+    const hk=get(/趣味[：:]\s*(.+)/);if(hk)document.getElementById('myHobbyKw').value=hk;
+    dropZone.querySelector('.drop-title').textContent=`✅ ${f.name} 読み込み完了`;
+  };
+  if(f.type==='text/plain'||f.name.endsWith('.txt')||f.name.endsWith('.csv'))
+    reader.readAsText(f,'UTF-8');
+  else dropZone.querySelector('.drop-title').textContent=`📎 ${f.name}（手動入力を推奨）`;
+}
+
+// ============================================================
+// PRINT / DOWNLOAD
+// ============================================================
+function printBriefCurrent() {
+  if(!currentAIPanelId)return;
+  const r=RESEARCHERS.find(x=>x.id===currentAIPanelId);if(!r)return;
+  const star=likedMap[r.id]||0;
+  const pw=window.open('','_blank','width=720,height=940');
+  pw.document.write(`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+<title>研究者ブリーフ — ${r.name}</title>
+<style>
+body{font-family:'Hiragino Sans','Yu Gothic',sans-serif;margin:36px;color:#1a1a2e;font-size:13px;}
+.hdr{border-bottom:3px solid #3b82f6;padding-bottom:14px;margin-bottom:20px;}
+.title{font-size:22px;font-weight:800;color:#1e3a8a;}
+.sub{color:#64748b;font-size:12px;margin-top:3px;}
+.logo{font-size:10px;color:#94a3b8;margin-top:5px;}
+.sec{margin-bottom:16px;}
+.sec-t{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;padding-bottom:3px;margin-bottom:7px;}
+.chip{display:inline-block;border-radius:4px;padding:2px 8px;margin:2px;font-size:11px;}
+.chip-r{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.chip-m{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+.chip-h{background:#fffbeb;color:#b45309;border:1px solid #fde68a;}
+.chip-match{background:#1d4ed8;color:#fff;border:1px solid #1d4ed8;}
+p{line-height:1.7;margin:4px 0;}
+.star{color:#f59e0b;}
+.footer{margin-top:28px;border-top:1px solid #e2e8f0;padding-top:10px;font-size:10px;color:#94a3b8;display:flex;justify-content:space-between;}
+</style></head><body>
+<div class="hdr">
+  <div class="title">🔬 ${r.name} ${star>0?`<span class="star">${'★'.repeat(star)}</span>`:''}</div>
+  <div class="sub">${r.inst} ／ ${r.rank}</div>
+  <div class="logo">Generated by ResearchMatch — ${new Date().toLocaleDateString('ja-JP')}</div>
+</div>
+<div class="sec"><div class="sec-t">🔧 研究手法キーワード</div>${r.methodKw.map(k=>`<span class="chip chip-r">${k}</span>`).join('')}</div>
+<div class="sec"><div class="sec-t">🌍 応用領域キーワード</div>${r.domainKw.map(k=>`<span class="chip chip-m">${k}</span>`).join('')}</div>
+<div class="sec"><div class="sec-t">🌐 研究以外の関心キーワード</div>${r.interestKw.map(k=>`<span class="chip chip-r" style="background:#f5f3ff;color:#5b21b6;border-color:#ddd6fe">${k}</span>`).join('')}</div>
+<div class="sec"><div class="sec-t">☕ 趣味・ライフスタイル</div>${r.hobbyKw.map(k=>`<span class="chip chip-h">${k}</span>`).join('')}</div>
+<div class="sec"><div class="sec-t">📝 研究概要</div><p>${r.bio}</p></div>
+<div class="footer"><span>ResearchMatch</span><span>印刷日: ${new Date().toLocaleDateString('ja-JP')}</span></div>
+<script>window.onload=()=>{window.print();}<\/script>
+</body></html>`);
+  pw.document.close();
+}
+
+function showLikedList() {
+  const ids=Object.entries(likedMap).filter(([,v])=>v>0).map(([id])=>+id);
+  if(!ids.length){alert('いいねした研究者がいません');return;}
+  const names=ids.map(id=>{const r=RESEARCHERS.find(x=>x.id===id);return r?`${'★'.repeat(likedMap[id])} ${r.name}（${r.inst}）`:''});
+  alert('いいね済み研究者:\n'+names.join('\n'));
+}
+
+function downloadAllLiked() {
+  const ids=Object.entries(likedMap).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([id])=>+id);
+  if(!ids.length){alert('いいねした研究者がいません');return;}
+  const liked=ids.map(id=>({r:RESEARCHERS.find(x=>x.id===id),star:likedMap[id]})).filter(x=>x.r);
+  const rows=liked.map(({r,star})=>`
+<div class="card">
+  <div class="cn">${r.name} <span class="star">${'★'.repeat(star)}</span> <span class="inst">${r.inst} ／ ${r.rank}</span></div>
+  <div class="lb">🔧 研究手法:</div>${r.methodKw.map(k=>`<span class="chip cr">${k}</span>`).join('')}
+  <div class="lb">🌍 応用領域:</div>${r.domainKw.map(k=>`<span class="chip cm">${k}</span>`).join('')}
+  <div class="lb">🌐 関心KW:</div>${r.interestKw.map(k=>`<span class="chip cp">${k}</span>`).join('')}
+  <div class="lb">☕ 趣味:</div>${r.hobbyKw.map(k=>`<span class="chip ch">${k}</span>`).join('')}
+  <div class="bio">${r.bio}</div>
+</div>`).join('');
+  const pw=window.open('','_blank','width=800,height=960');
+  pw.document.write(`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>いいね研究者一覧</title>
+<style>
+body{font-family:'Hiragino Sans','Yu Gothic',sans-serif;margin:24px;color:#1a1a2e;font-size:12px;}
+h1{font-size:18px;color:#1e3a8a;border-bottom:3px solid #3b82f6;padding-bottom:8px;margin-bottom:18px;}
+.card{border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:12px;page-break-inside:avoid;}
+.cn{font-size:14px;font-weight:700;margin-bottom:6px;}.inst{font-size:10px;color:#64748b;font-weight:400;}
+.star{color:#f59e0b;}
+.chip{display:inline-block;border-radius:4px;padding:1px 7px;margin:2px;font-size:10px;}
+.cr{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.cm{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+.cp{background:#f5f3ff;color:#5b21b6;border:1px solid #ddd6fe;}
+.ch{background:#fffbeb;color:#b45309;border:1px solid #fde68a;}
+.lb{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin:5px 0 2px;}
+.bio{margin-top:7px;color:#475569;line-height:1.6;font-size:11px;}
+.footer{margin-top:18px;font-size:10px;color:#94a3b8;text-align:center;}
+</style></head><body>
+<h1>❤️ いいね済み研究者ブリーフ（${liked.length}名）</h1>
+${rows}
+<div class="footer">ResearchMatch — ${new Date().toLocaleDateString('ja-JP')} 生成</div>
+<script>window.onload=()=>{window.print();}<\/script>
+</body></html>`);
+  pw.document.close();
+}
+
+// ============================================================
+// WINDOW RESIZE
+// ============================================================
+window.addEventListener('resize', ()=>{ if(matchResults.sync.length) redrawMap(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAIPanel(); });
+</script>
+</body>
+</html>
